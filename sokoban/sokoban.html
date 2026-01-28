@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推箱子 - 停云献礼</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #ff6b6b;
+            font-size: 2.5em;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #a0a0a0;
+            font-style: italic;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .info-bar span {
+            color: #fff;
+            font-size: 1.1em;
+        }
+
+        .level-display {
+            color: #ffd93d !important;
+            font-weight: bold;
+        }
+
+        .game-board {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        #gameCanvas {
+            border: 3px solid #ff6b6b;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffd93d, #f0c419);
+            color: #333;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .direction-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 5px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .dir-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5em;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dir-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .dir-btn:active {
+            transform: scale(0.95);
+        }
+
+        .dir-btn.empty {
+            visibility: hidden;
+        }
+
+        .level-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            max-width: 400px;
+            margin: 0 auto 20px;
+        }
+
+        .level-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ff6b6b;
+            border-radius: 8px;
+            background: rgba(255, 107, 107, 0.2);
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .level-btn:hover {
+            background: rgba(255, 107, 107, 0.5);
+        }
+
+        .level-btn.completed {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            border-color: #4ecdc4;
+        }
+
+        .level-btn.current {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            transform: scale(1.1);
+        }
+
+        .message {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.success {
+            display: block;
+            background: rgba(78, 205, 196, 0.3);
+            color: #4ecdc4;
+            border: 1px solid #4ecdc4;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ccc;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .info-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🦊 推箱子 🎮</h1>
+            <p>「恩公，此乃小女子停云为您精心准备的益智小戏」</p>
+        </div>
+
+        <div class="info-bar">
+            <span class="level-display">第 <span id="currentLevel">1</span> 关</span>
+            <span>步数: <span id="moves">0</span></span>
+            <span>推箱: <span id="pushes">0</span></span>
+        </div>
+
+        <div id="messageBox" class="message"></div>
+
+        <div class="game-board">
+            <canvas id="gameCanvas" width="400" height="400"></canvas>
+        </div>
+
+        <div class="direction-controls">
+            <button class="dir-btn empty"></button>
+            <button class="dir-btn" onclick="move('up')">⬆️</button>
+            <button class="dir-btn empty"></button>
+            <button class="dir-btn" onclick="move('left')">⬅️</button>
+            <button class="dir-btn" onclick="move('down')">⬇️</button>
+            <button class="dir-btn" onclick="move('right')">➡️</button>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-warning" onclick="restartLevel()">🔄 重玩本关</button>
+            <button class="btn btn-secondary" onclick="undoMove()">↩️ 撤销</button>
+            <button class="btn btn-primary" onclick="prevLevel()">⬅️ 上一关</button>
+            <button class="btn btn-primary" onclick="nextLevel()">➡️ 下一关</button>
+            <button class="btn btn-warning" onclick="Leaderboard.show('sokoban')">🏆 排行榜</button>
+        </div>
+
+        <div class="level-select" id="levelSelect"></div>
+
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #8B4513;"></div>
+                <span>墙壁</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFD700;"></div>
+                <span>箱子</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FF6B6B;"></div>
+                <span>目标</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4ECDC4;"></div>
+                <span>玩家</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #32CD32;"></div>
+                <span>完成</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="levels.js"></script>
+    <script src="../leaderboard.js"></script>
+    <script>
+        // 地图元素定义
+        const EMPTY = 0;
+        const WALL = 1;
+        const BOX = 2;
+        const TARGET = 3;
+        const PLAYER = 4;
+        const BOX_ON_TARGET = 5;
+        const PLAYER_ON_TARGET = 6;
+
+        // 游戏状态
+        let currentLevel = 0;
+
+        let gameMap = [];
+        let playerPos = { x: 0, y: 0 };
+        let moves = 0;
+        let pushes = 0;
+        let history = [];
+        let completedLevels = new Set();
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 深拷贝地图
+        function cloneMap(map) {
+            return map.map(row => [...row]);
+        }
+
+        // 初始化关卡
+        function initLevel(levelIndex) {
+            currentLevel = levelIndex;
+            const level = levels[levelIndex];
+            gameMap = cloneMap(level.map);
+            moves = 0;
+            pushes = 0;
+            history = [];
+            
+            // 找到玩家位置
+            for (let y = 0; y < gameMap.length; y++) {
+                for (let x = 0; x < gameMap[y].length; x++) {
+                    if (gameMap[y][x] === PLAYER || gameMap[y][x] === PLAYER_ON_TARGET) {
+                        playerPos = { x, y };
+                    }
+                }
+            }
+
+            updateDisplay();
+            render();
+            hideMessage();
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            document.getElementById('currentLevel').textContent = currentLevel + 1;
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('pushes').textContent = pushes;
+            updateLevelButtons();
+        }
+
+        // 渲染游戏画面
+        function render() {
+            const rows = gameMap.length;
+            const cols = gameMap[0].length;
+            const cellSize = Math.min(400 / cols, 400 / rows);
+            
+            canvas.width = cols * cellSize;
+            canvas.height = rows * cellSize;
+
+            ctx.fillStyle = '#2d2d44';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const cell = gameMap[y][x];
+                    const px = x * cellSize;
+                    const py = y * cellSize;
+
+                    // 绘制地板
+                    ctx.fillStyle = '#3d3d5c';
+                    ctx.fillRect(px + 1, py + 1, cellSize - 2, cellSize - 2);
+
+                    switch (cell) {
+                        case WALL:
+                            drawWall(px, py, cellSize);
+                            break;
+                        case BOX:
+                            drawBox(px, py, cellSize, false);
+                            break;
+                        case TARGET:
+                            drawTarget(px, py, cellSize);
+                            break;
+                        case PLAYER:
+                            drawPlayer(px, py, cellSize);
+                            break;
+                        case BOX_ON_TARGET:
+                            drawTarget(px, py, cellSize);
+                            drawBox(px, py, cellSize, true);
+                            break;
+                        case PLAYER_ON_TARGET:
+                            drawTarget(px, py, cellSize);
+                            drawPlayer(px, py, cellSize);
+                            break;
+                    }
+                }
+            }
+        }
+
+        function drawWall(x, y, size) {
+            const gradient = ctx.createLinearGradient(x, y, x + size, y + size);
+            gradient.addColorStop(0, '#8B4513');
+            gradient.addColorStop(1, '#654321');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x + 2, y + 2, size - 4, size - 4);
+            
+            ctx.strokeStyle = '#5D3A1A';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 2, y + 2, size - 4, size - 4);
+        }
+
+        function drawBox(x, y, size, onTarget) {
+            const gradient = ctx.createRadialGradient(
+                x + size/2, y + size/2, 0,
+                x + size/2, y + size/2, size/2
+            );
+            if (onTarget) {
+                gradient.addColorStop(0, '#32CD32');
+                gradient.addColorStop(1, '#228B22');
+            } else {
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(1, '#DAA520');
+            }
+            ctx.fillStyle = gradient;
+            
+            const padding = size * 0.15;
+            ctx.beginPath();
+            ctx.roundRect(x + padding, y + padding, size - padding*2, size - padding*2, 5);
+            ctx.fill();
+            
+            ctx.strokeStyle = onTarget ? '#006400' : '#B8860B';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawTarget(x, y, size) {
+            ctx.fillStyle = 'rgba(255, 107, 107, 0.5)';
+            ctx.beginPath();
+            ctx.arc(x + size/2, y + size/2, size/3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = '#FF6B6B';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function drawPlayer(x, y, size) {
+            // 身体
+            const gradient = ctx.createRadialGradient(
+                x + size/2, y + size/2, 0,
+                x + size/2, y + size/2, size/2
+            );
+            gradient.addColorStop(0, '#4ECDC4');
+            gradient.addColorStop(1, '#26A69A');
+            ctx.fillStyle = gradient;
+            
+            ctx.beginPath();
+            ctx.arc(x + size/2, y + size/2, size/3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 眼睛
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(x + size/2 - size/10, y + size/2 - size/10, size/12, 0, Math.PI * 2);
+            ctx.arc(x + size/2 + size/10, y + size/2 - size/10, size/12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(x + size/2 - size/10, y + size/2 - size/10, size/20, 0, Math.PI * 2);
+            ctx.arc(x + size/2 + size/10, y + size/2 - size/10, size/20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // 移动逻辑
+        function move(direction) {
+            const dx = { up: 0, down: 0, left: -1, right: 1 }[direction];
+            const dy = { up: -1, down: 1, left: 0, right: 0 }[direction];
+            
+            const newX = playerPos.x + dx;
+            const newY = playerPos.y + dy;
+            const beyondX = newX + dx;
+            const beyondY = newY + dy;
+
+            const targetCell = gameMap[newY]?.[newX];
+            
+            if (targetCell === undefined || targetCell === WALL) {
+                return; // 撞墙
+            }
+
+            // 保存历史
+            history.push({
+                map: cloneMap(gameMap),
+                playerPos: { ...playerPos },
+                moves: moves,
+                pushes: pushes
+            });
+
+            // 检查是否推箱子
+            if (targetCell === BOX || targetCell === BOX_ON_TARGET) {
+                const beyondCell = gameMap[beyondY]?.[beyondX];
+                
+                if (beyondCell === undefined || beyondCell === WALL || 
+                    beyondCell === BOX || beyondCell === BOX_ON_TARGET) {
+                    history.pop();
+                    return; // 无法推动
+                }
+
+                // 移动箱子
+                gameMap[beyondY][beyondX] = beyondCell === TARGET ? BOX_ON_TARGET : BOX;
+                gameMap[newY][newX] = targetCell === BOX_ON_TARGET ? TARGET : EMPTY;
+                pushes++;
+            }
+
+            // 移动玩家
+            const currentCell = gameMap[playerPos.y][playerPos.x];
+            gameMap[playerPos.y][playerPos.x] = currentCell === PLAYER_ON_TARGET ? TARGET : EMPTY;
+            
+            const newCell = gameMap[newY][newX];
+            gameMap[newY][newX] = newCell === TARGET ? PLAYER_ON_TARGET : PLAYER;
+            
+            playerPos = { x: newX, y: newY };
+            moves++;
+
+            updateDisplay();
+            render();
+            checkWin();
+        }
+
+        // 检查胜利
+        function checkWin() {
+            for (let y = 0; y < gameMap.length; y++) {
+                for (let x = 0; x < gameMap[y].length; x++) {
+                    if (gameMap[y][x] === TARGET || gameMap[y][x] === PLAYER_ON_TARGET) {
+                        return false;
+                    }
+                }
+            }
+            
+            completedLevels.add(currentLevel);
+            
+            // 提交成绩：通关数量
+            const totalCleared = completedLevels.size;
+            Leaderboard.submit('sokoban', totalCleared, `已通关 ${totalCleared} 关`);
+
+            showMessage(`🎉 恭喜通关！步数: ${moves}, 推箱: ${pushes}`);
+
+            updateLevelButtons();
+            
+            setTimeout(() => {
+                if (currentLevel < levels.length - 1) {
+                    if (confirm('恩公神武！是否挑战下一关？')) {
+                        nextLevel();
+                    }
+                } else {
+                    alert('🏆 恩公真乃天纵奇才！');
+                }
+            }, 500);
+            
+            return true;
+        }
+
+        // 撤销移动
+        function undoMove() {
+            if (history.length === 0) return;
+            
+            const state = history.pop();
+            gameMap = state.map;
+            playerPos = state.playerPos;
+            moves = state.moves;
+            pushes = state.pushes;
+            
+            updateDisplay();
+            render();
+            hideMessage();
+        }
+
+        // 重玩本关
+        function restartLevel() {
+            initLevel(currentLevel);
+        }
+
+        // 上一关
+        function prevLevel() {
+            if (currentLevel > 0) {
+                initLevel(currentLevel - 1);
+            }
+        }
+
+        // 下一关
+        function nextLevel() {
+            if (currentLevel < levels.length - 1) {
+                initLevel(currentLevel + 1);
+            }
+        }
+
+        // 选择关卡
+        function selectLevel(index) {
+            initLevel(index);
+        }
+
+        // 显示消息
+        function showMessage(text) {
+            const box = document.getElementById('messageBox');
+            box.textContent = text;
+            box.className = 'message success';
+        }
+
+        // 隐藏消息
+        function hideMessage() {
+            document.getElementById('messageBox').className = 'message';
+        }
+
+        // 更新关卡按钮
+        function updateLevelButtons() {
+            const container = document.getElementById('levelSelect');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < levels.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.textContent = i + 1;
+                btn.onclick = () => selectLevel(i);
+                
+                if (completedLevels.has(i)) {
+                    btn.classList.add('completed');
+                }
+                if (i === currentLevel) {
+                    btn.classList.add('current');
+                }
+                
+                container.appendChild(btn);
+            }
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    move('up');
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    move('down');
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    move('left');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    move('right');
+                    break;
+                case 'z':
+                case 'Z':
+                    if (e.ctrlKey) {
+                        e.preventDefault();
+                        undoMove();
+                    }
+                    break;
+                case 'r':
+                case 'R':
+                    restartLevel();
+                    break;
+            }
+        });
+
+        // 初始化游戏
+        initLevel(0);
+    </script>
+</body>
+</html>
