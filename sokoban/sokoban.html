@@ -122,12 +122,18 @@
         }
 
         .direction-controls {
-            display: grid;
+            display: none; /* 默认隐藏 */
             grid-template-columns: repeat(3, 60px);
             grid-template-rows: repeat(3, 60px);
             gap: 5px;
             justify-content: center;
             margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .direction-controls {
+                display: grid;
+            }
         }
 
         .dir-btn {

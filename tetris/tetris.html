@@ -21,7 +21,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-y: auto; /* 允许垂直滚动，防止小屏内容被切 */
+            padding-bottom: 20px; /* 底部增加一点内边距 */
         }
 
         /* 顶部导航 */
@@ -136,6 +137,7 @@
             /* 确保在最上层 */
             position: relative;
             z-index: 100;
+            margin-bottom: 50px; /* 增加底部安全距离 */
         }
 
         .control-row {
@@ -751,23 +753,60 @@
             }
         });
 
-        // 触屏/按钮控制
-        // 使用 touchstart 避免延迟，但要注意 preventDefault 防止滚动
+        // 触屏/按钮控制 - 支持长按连发
         function addTouchListener(id, action) {
             const btn = document.getElementById(id);
             if (!btn) return;
             
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
+            let pressTimer = null;
+            let repeatTimer = null;
+            
+            const startAction = (e) => {
+                if (e.cancelable) e.preventDefault(); // 防止默认行为（如滚动、双击缩放）
+                
                 if (isGameOver || (isPaused && action !== togglePause)) return;
-                action();
-            }, {passive: false});
-
-            // 兼容鼠标点击测试
-            btn.addEventListener('mousedown', (e) => {
-                if (isGameOver || (isPaused && action !== togglePause)) return;
-                action();
-            });
+                
+                action(); // 立即执行一次
+                
+                // 清除旧的定时器以防万一
+                clearTimers();
+                
+                // 延迟后开始连发 (长按判定)
+                pressTimer = setTimeout(() => {
+                    repeatTimer = setInterval(() => {
+                        if (isGameOver || (isPaused && action !== togglePause)) {
+                            clearTimers();
+                            return;
+                        }
+                        action();
+                    }, 80); // 连发间隔 80ms，实现加速效果
+                }, 250); // 长按 250ms 后触发连发
+            };
+            
+            const clearTimers = () => {
+                if (pressTimer) {
+                    clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+                if (repeatTimer) {
+                    clearInterval(repeatTimer);
+                    repeatTimer = null;
+                }
+            };
+            
+            const endAction = (e) => {
+                if (e.cancelable) e.preventDefault();
+                clearTimers();
+            };
+            
+            btn.addEventListener('touchstart', startAction, {passive: false});
+            btn.addEventListener('touchend', endAction);
+            btn.addEventListener('touchcancel', endAction);
+            
+            // 兼容鼠标操作
+            btn.addEventListener('mousedown', startAction);
+            btn.addEventListener('mouseup', endAction);
+            btn.addEventListener('mouseleave', endAction);
         }
 
         addTouchListener('btn-left', () => playerMove(-1));
